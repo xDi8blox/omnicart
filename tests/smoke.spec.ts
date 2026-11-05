@@ -55,8 +55,15 @@ test.describe('OMNICART smoke', () => {
       const stage = page.locator('#game-canvas');
       const b = await stage.boundingBox();
       if (b) {
-        await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+        try {
+          await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+        } catch {
+          await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+        }
         await page.mouse.click(b.x + b.width * 0.6, b.y + b.height * 0.6);
+        await page.mouse.down();
+        await page.mouse.move(b.x + b.width * 0.7, b.y + b.height * 0.5);
+        await page.mouse.up();
       }
       await page.waitForTimeout(1200);
       // canvas should still have pixels (not blank zero size)

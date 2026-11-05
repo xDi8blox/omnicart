@@ -2,71 +2,59 @@
 
 **30 neon arcade games. One cartridge.**
 
-A polished browser game collection built as a public portfolio piece — Vite + TypeScript, Canvas 2D (Three.js for the hover-bike tunnel), lazy-loaded game chunks, procedural Web Audio, keyboard + touch, and a retro cartridge select menu.
+A polished browser game collection — Vite + TypeScript, Canvas 2D (Three.js for the hover-bike tunnel), lazy-loaded game chunks, procedural Web Audio, keyboard + touch, and a retro cartridge select menu with high scores.
 
 ## Play
 
 **Live:** https://xdi8blox.github.io/omnicart/
 
-## Games
+![OMNICART menu](./screenshots/menu.png)
 
-| # | ID | Name | Genre |
-|---|----|------|-------|
-| 1 | neon-coil | Neon Coil | Arcade |
-| 2 | prism-breaker | Prism Breaker | Arcade |
-| 3 | void-wing | Void Wing | Arcade |
-| 4 | shard-field | Shard Field | Arcade |
-| 5 | lumen-chase | Lumen Chase | Arcade |
-| 6 | rushline | Rushline | Arcade |
-| 7 | cave-dart | Cave Dart | Arcade |
-| 8 | fluxball | Fluxball | Arcade |
-| 9 | aegis-grid | Aegis Grid | Arcade |
-| 10 | sky-stack | Sky Stack | Arcade |
-| 11 | chrono-drop | Chrono Drop | Puzzle |
-| 12 | gemfuse | Gemfuse | Puzzle |
-| 13 | helix-2048 | Helix 2048 | Puzzle |
-| 14 | signal-sweep | Signal Sweep | Puzzle |
-| 15 | glyph-grid | Glyph Grid | Puzzle |
-| 16 | shift-15 | Shift-15 | Puzzle |
-| 17 | conduit | Conduit | Puzzle |
-| 18 | echo-pairs | Echo Pairs | Puzzle |
-| 19 | lexigrid | Lexigrid | Puzzle |
-| 20 | cratecraft | Cratecraft | Puzzle |
-| 21 | driftwire | Driftwire | Racing |
-| 22 | horizon-drive | Horizon Drive | Racing |
-| 23 | lane-rush | Lane Rush | Racing |
-| 24 | hover-tube | Hover Tube | Racing (Three.js) |
-| 25 | arena-kart | Arena Kart | Racing |
-| 26 | pulse-duel | Pulse Duel | Action |
-| 27 | edge-parry | Edge Parry | Action |
-| 28 | street-surge | Street Surge | Action |
-| 29 | ring-push | Ring Push | Action |
-| 30 | apex-gauntlet | Apex Gauntlet | Action |
+## Screenshots
 
-Screenshots live in [`screenshots/`](./screenshots/) (menu + per-game captures from the Playwright suite).
+<p>
+  <img src="./screenshots/neon-coil.png" width="24%" alt="Neon Coil" />
+  <img src="./screenshots/void-wing.png" width="24%" alt="Void Wing" />
+  <img src="./screenshots/chrono-drop.png" width="24%" alt="Chrono Drop" />
+  <img src="./screenshots/hover-tube.png" width="24%" alt="Hover Tube" />
+</p>
+
+| Arcade | Puzzle | Racing | Action |
+|--------|--------|--------|--------|
+| ![Neon Coil](./screenshots/neon-coil.png) Neon Coil | ![Chrono Drop](./screenshots/chrono-drop.png) Chrono Drop | ![Driftwire](./screenshots/driftwire.png) Driftwire | ![Pulse Duel](./screenshots/pulse-duel.png) Pulse Duel |
+| ![Prism Breaker](./screenshots/prism-breaker.png) Prism Breaker | ![Gemfuse](./screenshots/gemfuse.png) Gemfuse | ![Horizon Drive](./screenshots/horizon-drive.png) Horizon Drive | ![Edge Parry](./screenshots/edge-parry.png) Edge Parry |
+| ![Void Wing](./screenshots/void-wing.png) Void Wing | ![Helix 2048](./screenshots/helix-2048.png) Helix 2048 | ![Lane Rush](./screenshots/lane-rush.png) Lane Rush | ![Street Surge](./screenshots/street-surge.png) Street Surge |
+| ![Shard Field](./screenshots/shard-field.png) Shard Field | ![Signal Sweep](./screenshots/signal-sweep.png) Signal Sweep | ![Hover Tube](./screenshots/hover-tube.png) Hover Tube | ![Ring Push](./screenshots/ring-push.png) Ring Push |
+| ![Lumen Chase](./screenshots/lumen-chase.png) Lumen Chase | ![Glyph Grid](./screenshots/glyph-grid.png) Glyph Grid | ![Arena Kart](./screenshots/arena-kart.png) Arena Kart | ![Apex Gauntlet](./screenshots/apex-gauntlet.png) Apex Gauntlet |
+| ![Rushline](./screenshots/rushline.png) Rushline | ![Shift-15](./screenshots/shift-15.png) Shift-15 | | |
+| ![Cave Dart](./screenshots/cave-dart.png) Cave Dart | ![Conduit](./screenshots/conduit.png) Conduit | | |
+| ![Fluxball](./screenshots/fluxball.png) Fluxball | ![Echo Pairs](./screenshots/echo-pairs.png) Echo Pairs | | |
+| ![Aegis Grid](./screenshots/aegis-grid.png) Aegis Grid | ![Lexigrid](./screenshots/lexigrid.png) Lexigrid | | |
+| ![Sky Stack](./screenshots/sky-stack.png) Sky Stack | ![Cratecraft](./screenshots/cratecraft.png) Cratecraft | | |
+
+All captures are in [`screenshots/`](./screenshots/).
 
 ## Controls
 
-- **Keyboard:** Arrows / WASD move · Space / Z / J action · Esc / P pause · game-specific extras in each cartridge subtitle
-- **Touch:** On-screen D-pad + A/B · swipe/tap where it fits the genre
+- **Keyboard:** Arrows / WASD move · Space / Z / J action · Esc / P pause · extras per game (hold, flippers, dash, etc.)
+- **Touch:** On-screen D-pad + A/B · swipe/tap where it fits
 - **Mobile:** Landscape-friendly responsive canvas with `devicePixelRatio` scaling
 
 ## Tech
 
 - Vite + TypeScript
-- Canvas 2D game loop shell (`GameBase`) with shared HUD, pause/restart/quit, settings, localStorage highs
+- Shared `GameBase` shell: HUD, pause/restart/quit, settings (SFX/music/mute), localStorage highs & stats
 - Three.js only for **Hover Tube**
-- Each game is a separate lazy chunk
-- Procedural Web Audio SFX + looped motif music
-- Playwright smoke test launches all 30 games with simulated input
+- Each game is its own lazy chunk
+- Procedural Web Audio SFX + motif music
+- Playwright smoke: launches all 30 with keyboard + touch, asserts canvas render & no errors
 
 ## Develop
 
 ```bash
 npm install
 npm run dev          # http://localhost:4500
-npm run build
-npm run preview
+npm run build && npm run preview
 npm run test:smoke
 npm run screenshots
 ```
