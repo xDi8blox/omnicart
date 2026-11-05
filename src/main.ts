@@ -13,7 +13,7 @@ app.innerHTML = `
     <div class="boot-logo">
       <div class="boot-cart" aria-hidden="true"></div>
       <h1>OMNICART</h1>
-      <p>30 Games · One Cartridge</p>
+      <p>10 Games · One Cartridge</p>
       <div class="boot-bar"><i id="boot-fill"></i></div>
     </div>
   </div>
@@ -21,7 +21,7 @@ app.innerHTML = `
     <div class="topbar">
       <div class="brand">
         <span class="brand-mark"><i></i></span>
-        <div><span class="brand-text">OMNICART</span><small>PORTABLE ARCADE</small></div>
+        <div><span class="brand-text">OMNICART</span><small>DEMONIC ARCADE</small></div>
       </div>
       <div class="spacer"></div>
       <button class="icon-btn" id="btn-settings" type="button">Settings</button>
@@ -115,7 +115,7 @@ let selectedDiff: 'easy' | 'normal' | 'hard' = 'normal';
 function cartHtml(g: GameMeta): string {
   const st = getEntry(g.id);
   return `<button class="cart" data-id="${g.id}" style="--accent:${g.accent}" type="button">
-    <div class="cart-thumb">${thumbSvg(g.id)}</div>
+    <div class="cart-thumb"><img src="./screenshots/${g.id}.png" alt="" loading="lazy" /></div>
     <h3>${g.name}</h3>
     <p>${g.subtitle}</p>
     <div class="best">BEST ${st.best} · PLAYS ${st.plays}</div>
@@ -135,7 +135,7 @@ function renderMenu(): void {
   const plays = Object.values(totals).reduce((s, e) => s + e.plays, 0);
   const recent = recentGames();
   const tabs: { id: typeof activeTab; label: string }[] = [
-    { id: 'all', label: 'All 30' },
+    { id: 'all', label: 'All 10' },
     { id: 'arcade', label: 'Arcade' },
     { id: 'puzzle', label: 'Puzzle' },
     { id: 'racing', label: 'Racing' },
@@ -148,9 +148,9 @@ function renderMenu(): void {
       <div class="hero-logo" aria-hidden="true"></div>
       <div class="hero-copy">
         <h1>OMNICART</h1>
-        <p>Snap in a cartridge. Thirty original neon arcade, puzzle, racing &amp; action games — keyboard and touch ready.</p>
+        <p>Snap in a cartridge. Ten cursed neon arcade games. One cartridge — keyboard and touch ready for landscape play.</p>
       </div>
-      <div class="hero-stats"><span>PLAYS ${plays}</span><span>CARTS 30</span></div>
+      <div class="hero-stats"><span>PLAYS ${plays}</span><span>CARTS 10</span></div>
     </div>
     <div class="tabs">${tabs.map((t) => `<button class="tab ${activeTab === t.id ? 'active' : ''}" data-tab="${t.id}" type="button">${t.label}</button>`).join('')}</div>
   `;
@@ -194,7 +194,7 @@ function openHowto(id: string): void {
   (document.getElementById('howto-body')!).textContent = meta.howto;
   (document.getElementById('howto-controls')!).textContent = `Controls: ${meta.controls}`;
   const diffRow = document.getElementById('diff-row')!;
-  const needsDiff = id === 'glyph-grid' || id === 'signal-sweep' || id === 'chrono-drop' || id === 'gemfuse' || id === 'void-wing';
+  const needsDiff = id === 'chrono-drop' || id === 'gemfuse' || id === 'void-wing' || id === 'pulse-duel';
   diffRow.hidden = !needsDiff;
   diffRow.querySelectorAll<HTMLButtonElement>('.btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.diff === selectedDiff);
@@ -225,7 +225,7 @@ function buildTouchPad(layout: TouchLayout): void {
   } else if (layout === 'flippers') {
     html = `<div class="row">${mk('z', '◀ L')}${mk(' ', 'LAUNCH', 'action')}${mk('m', 'R ▶')}<div class="spacer"></div></div>`;
   } else if (layout === 'fighter') {
-    html = `<div class="row">${mk('arrowleft', '◀')}${mk('arrowright', '▶')}<div class="spacer"></div>${mk('j', 'PUNCH')}${mk('k', 'KICK')}${mk('l', 'SP', 'action')}</div>`;
+    html = `<div class="row">${mk('arrowleft', '◀')}${mk('arrowup', '▲')}${mk('arrowright', '▶')}<div class="spacer"></div>${mk('j', 'PUNCH')}${mk('k', 'KICK')}${mk('shift', 'BLOCK', 'action')}</div>`;
   } else if (layout === 'dpad-only') {
     html = `<div class="row">${mk('arrowleft', '◀')}<div style="display:flex;flex-direction:column;gap:8px">${mk('arrowup', '▲')}${mk('arrowdown', '▼')}</div>${mk('arrowright', '▶')}<div class="spacer"></div></div>`;
   } else {

@@ -105,6 +105,17 @@ export class Input {
   actionJust(): boolean {
     return this.just(' ') || this.just('z') || this.just('j') || this.just('enter');
   }
+  left(): boolean { return this.pressed('arrowleft') || this.pressed('a'); }
+  right(): boolean { return this.pressed('arrowright') || this.pressed('d'); }
+  up(): boolean { return this.pressed('arrowup') || this.pressed('w'); }
+  down(): boolean { return this.pressed('arrowdown') || this.pressed('s'); }
+  leftJust(): boolean { return this.just('arrowleft') || this.just('a'); }
+  rightJust(): boolean { return this.just('arrowright') || this.just('d'); }
+  upJust(): boolean { return this.just('arrowup') || this.just('w'); }
+  downJust(): boolean { return this.just('arrowdown') || this.just('s'); }
+  anyDir(): boolean {
+    return this.leftJust() || this.rightJust() || this.upJust() || this.downJust() || this.left() || this.right() || this.up() || this.down();
+  }
 }
 
 export const input = new Input();

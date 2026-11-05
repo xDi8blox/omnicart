@@ -1,9 +1,10 @@
+import type { GameFactory, GameHooks } from '../core/types';
 import { GameBase } from '../core/GameBase';
-import type { GameHooks, GameFactory } from '../core/types';
 import { input } from '../input/Input';
 import { audio } from '../audio/AudioEngine';
+import { fillVoidBg, glowCircle, roundRect, drawPremiumHud } from '../shared/fx';
 
-const SHAPES:number[][][]=[
+const SHAPES: number[][][] = [
   [[1,1,1,1]],
   [[1,1],[1,1]],
   [[0,1,0],[1,1,1]],
@@ -12,99 +13,177 @@ const SHAPES:number[][][]=[
   [[0,1,1],[1,1,0]],
   [[1,1,0],[0,1,1]],
 ];
+const COLORS = ['#00e8ff','#ff2040','#f0c14b','#ff2bd6','#7cff6b','#8a5cff','#ff8a1a'];
+// SRS-ish wall kicks for JLSTZ
+const KICKS: [number, number][][] = [
+  [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+];
+
+type Piece = { shape: number[][]; color: string; x: number; y: number; rot: number; idx: number };
+
 class ChronoDrop extends GameBase {
-  private cols=10; private rows=20; private cell=0;
-  private board:number[][]=[]; private piece:{m:number[][];x:number;y:number;id:number}|null=null;
-  private hold:number|null=null; private held=false; private next:number[]=[];
-  private grav=0; private speed=0.6;
-  constructor(c:HTMLCanvasElement,h:GameHooks){super(c,h,'#00f5d4');}
-  protected onStart(){
-    this.cell=Math.floor(Math.min((this.w-120)/this.cols,(this.h-50)/this.rows));
-    this.board=Array.from({length:this.rows},()=>Array(this.cols).fill(0));
-    this.next=[this.rand(),this.rand(),this.rand()]; this.hold=null; this.held=false; this.speed=0.6; this.spawn();
+  private cols=10; private rows=18; private cell=28;
+  private ox=0; private oy=0;
+  private grid: (string|null)[][] = [];
+  private piece!: Piece; private hold: Piece|null=null; private holdUsed=false;
+  private next: number[]=[]; private bag: number[]=[];
+  private fall=0; private das=0; private flashRows: number[]=[]; private flashT=0;
+  private level=1; private lines=0; private started=false; private lockT=0;
+
+  constructor(c: HTMLCanvasElement, h: GameHooks){ super(c,h,'#8a5cff'); }
+
+  protected onStart(): void {
+    this.level=1; this.lines=0; this.hold=null; this.holdUsed=false; this.started=false;
+    this.grid=Array.from({length:this.rows},()=>Array(this.cols).fill(null));
+    this.bag=[]; this.next=[];
+    while(this.next.length<5) this.next.push(this.pull());
+    this.spawn(); this.layoutBoard();
   }
-  private rand(){ return (Math.random()*SHAPES.length)|0; }
-  private spawn(){
-    const id=this.next.shift()!; this.next.push(this.rand());
-    this.piece={m:SHAPES[id].map(r=>[...r]),x:3,y:0,id}; this.held=false;
-    if(this.collide(this.piece.m,this.piece.x,this.piece.y)) this.gameOver(false);
+  private layoutBoard(): void {
+    this.cell=Math.floor(Math.min((this.w-280)/this.cols,(this.h-80)/this.rows));
+    this.ox=(this.w-this.cols*this.cell)/2-20;
+    this.oy=56+(this.h-56-this.rows*this.cell)/2;
   }
-  private collide(m:number[][],x:number,y:number){
-    for(let r=0;r<m.length;r++) for(let c=0;c<m[r].length;c++){
-      if(!m[r][c]) continue;
-      const nx=x+c, ny=y+r;
-      if(nx<0||nx>=this.cols||ny>=this.rows) return true;
-      if(ny>=0 && this.board[ny][nx]) return true;
+  private pull(): number {
+    if(!this.bag.length){ this.bag=[0,1,2,3,4,5,6]; for(let i=this.bag.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [this.bag[i],this.bag[j]]=[this.bag[j],this.bag[i]]; } }
+    return this.bag.pop()!;
+  }
+  private spawn(): void {
+    const idx=this.next.shift()!; this.next.push(this.pull());
+    this.piece={ shape: SHAPES[idx].map(r=>[...r]), color: COLORS[idx], x:3, y:0, rot:0, idx };
+    this.holdUsed=false; this.lockT=0;
+    if(this.collides(this.piece.x,this.piece.y,this.piece.shape)) this.gameOver(false);
+  }
+  private collides(px:number,py:number,shape:number[][]): boolean {
+    for(let y=0;y<shape.length;y++) for(let x=0;x<shape[y].length;x++){
+      if(!shape[y][x]) continue;
+      const gx=px+x, gy=py+y;
+      if(gx<0||gx>=this.cols||gy>=this.rows) return true;
+      if(gy>=0 && this.grid[gy][gx]) return true;
     }
     return false;
   }
-  private rotate(m:number[][]){
-    const R=m[0].length, C=m.length; const out=Array.from({length:R},()=>Array(C).fill(0));
-    for(let r=0;r<C;r++) for(let c=0;c<R;c++) out[c][C-1-r]=m[r][c];
-    return out;
-  }
-  private lock(){
-    if(!this.piece) return;
-    const {m,x,y,id}=this.piece;
-    for(let r=0;r<m.length;r++) for(let c=0;c<m[r].length;c++) if(m[r][c]&&y+r>=0) this.board[y+r][x+c]=id+1;
-    let cleared=0;
-    for(let r=this.rows-1;r>=0;r--){
-      if(this.board[r].every(v=>v)){ this.board.splice(r,1); this.board.unshift(Array(this.cols).fill(0)); cleared++; r++; }
-    }
-    if(cleared){ this.addScore([0,100,300,500,800][cleared]||800); audio.powerup(); this.speed=Math.max(0.12,this.speed*0.96); }
-    else audio.blip(400);
-    this.spawn();
-  }
-  protected update(dt:number){
-    if(!this.piece) return;
-    if(input.just('arrowleft')||input.just('a')){ if(!this.collide(this.piece.m,this.piece.x-1,this.piece.y)) this.piece.x--; }
-    if(input.just('arrowright')||input.just('d')){ if(!this.collide(this.piece.m,this.piece.x+1,this.piece.y)) this.piece.x++; }
-    if(input.just('arrowup')||input.just('w')){
-      const rm=this.rotate(this.piece.m);
-      if(!this.collide(rm,this.piece.x,this.piece.y)) this.piece.m=rm;
-      else if(!this.collide(rm,this.piece.x-1,this.piece.y)){ this.piece.m=rm; this.piece.x--; }
-      else if(!this.collide(rm,this.piece.x+1,this.piece.y)){ this.piece.m=rm; this.piece.x++; }
-      audio.blip(600);
-    }
-    if(input.just('c')||input.just('shift')){
-      if(!this.held){
-        this.held=true; const cur=this.piece.id;
-        if(this.hold==null){ this.hold=cur; this.spawn(); }
-        else { const h=this.hold; this.hold=cur; this.piece={m:SHAPES[h].map(r=>[...r]),x:3,y:0,id:h}; }
-        audio.blip(500);
+  private rotate(dir: number): void {
+    const src=this.piece.shape;
+    const N=Math.max(src.length, src[0].length);
+    const padded=Array.from({length:N},(_,y)=>Array.from({length:N},(_,x)=>src[y]?.[x]??0));
+    const rot=dir>0
+      ? padded[0].map((_,i)=>padded.map(r=>r[i]).reverse())
+      : padded[0].map((_,i)=>padded.map(r=>r[N-1-i]));
+    const from=this.piece.rot; const to=(from+dir+4)%4;
+    const kicks=KICKS[from] || KICKS[0];
+    for(const [kx,ky] of kicks){
+      if(!this.collides(this.piece.x+kx*dir, this.piece.y+ky, rot)){
+        this.piece.shape=rot; this.piece.x+=kx*dir; this.piece.y+=ky; this.piece.rot=to; audio.blip(600); return;
       }
     }
-    const soft=input.pressed('arrowdown')||input.pressed('s');
-    if(input.just(' ')){
-      while(!this.collide(this.piece.m,this.piece.x,this.piece.y+1)) this.piece.y++;
-      this.lock(); return;
+  }
+  private hardDrop(): void {
+    while(!this.collides(this.piece.x,this.piece.y+1,this.piece.shape)){ this.piece.y++; this.addScore(2); }
+    this.lock();
+  }
+  private lock(): void {
+    for(let y=0;y<this.piece.shape.length;y++) for(let x=0;x<this.piece.shape[y].length;x++){
+      if(!this.piece.shape[y][x]) continue;
+      const gy=this.piece.y+y, gx=this.piece.x+x;
+      if(gy>=0&&gy<this.rows) this.grid[gy][gx]=this.piece.color;
     }
-    this.grav+=dt*(soft?4:1);
-    if(this.grav>=this.speed){
-      this.grav=0;
-      if(!this.collide(this.piece.m,this.piece.x,this.piece.y+1)) this.piece.y++; else this.lock();
+    audio.hit();
+    const cleared:number[]=[];
+    for(let y=0;y<this.rows;y++) if(this.grid[y].every(c=>c)) cleared.push(y);
+    if(cleared.length){
+      this.flashRows=cleared; this.flashT=0.35;
+      const scores=[0,100,300,500,800];
+      this.addScore(scores[cleared.length]*this.level);
+      this.lines+=cleared.length;
+      this.level=1+Math.floor(this.lines/10);
+      audio.powerup();
+      for(const y of cleared){ this.grid.splice(y,1); this.grid.unshift(Array(this.cols).fill(null)); }
+    }
+    this.spawn();
+  }
+  private doHold(): void {
+    if(this.holdUsed) return;
+    this.holdUsed=true; audio.blip(400);
+    const cur={...this.piece, shape:SHAPES[this.piece.idx].map(r=>[...r]), rot:0, x:3, y:0};
+    if(!this.hold){ this.hold=cur; this.spawn(); }
+    else { const tmp=this.hold; this.hold=cur; this.piece={...tmp, x:3,y:0,rot:0, shape:SHAPES[tmp.idx].map(r=>[...r])}; }
+  }
+
+  protected update(dt: number): void {
+    this.layoutBoard();
+    if(!this.started){ if(input.actionJust()||input.pointer.justDown){ this.started=true; audio.blip(); } return; }
+    if(this.flashT>0){ this.flashT-=dt; }
+    if(input.leftJust()) { if(!this.collides(this.piece.x-1,this.piece.y,this.piece.shape)) this.piece.x--; }
+    if(input.rightJust()) { if(!this.collides(this.piece.x+1,this.piece.y,this.piece.shape)) this.piece.x++; }
+    if(input.upJust()||input.just('x')) this.rotate(1);
+    if(input.just('z')) this.rotate(-1);
+    if(input.just('c')||input.just('shift')) this.doHold();
+    if(input.just(' ')) this.hardDrop();
+    // DAS continuous
+    if(input.left()){ this.das+=dt; if(this.das>0.15){ this.das=0.05; if(!this.collides(this.piece.x-1,this.piece.y,this.piece.shape)) this.piece.x--; } }
+    else if(input.right()){ this.das+=dt; if(this.das>0.15){ this.das=0.05; if(!this.collides(this.piece.x+1,this.piece.y,this.piece.shape)) this.piece.x++; } }
+    else this.das=0;
+
+    const grav=Math.max(0.08, 0.7 - (this.level-1)*0.05);
+    this.fall+=dt*(input.down()?4:1);
+    while(this.fall>=grav){
+      this.fall-=grav;
+      if(!this.collides(this.piece.x,this.piece.y+1,this.piece.shape)){ this.piece.y++; this.lockT=0; }
+      else { this.lockT+=grav; if(this.lockT>0.5) this.lock(); }
     }
   }
-  protected render(){
-    this.clear('#041410');
-    const ox=(this.w-this.cols*this.cell)/2-40, oy=40;
-    const ctx=this.ctx; const colors=['','#00f5d4','#ffe66b','#ff6bcb','#6bcbff','#80ffdb','#ff9f1c','#b967ff'];
-    ctx.fillStyle='#0a1a18'; ctx.fillRect(ox,oy,this.cols*this.cell,this.rows*this.cell);
-    for(let r=0;r<this.rows;r++) for(let c=0;c<this.cols;c++) if(this.board[r][c]){ ctx.fillStyle=colors[this.board[r][c]]; ctx.fillRect(ox+c*this.cell+1,oy+r*this.cell+1,this.cell-2,this.cell-2); }
-    if(this.piece){
-      ctx.fillStyle=colors[this.piece.id+1];
-      for(let r=0;r<this.piece.m.length;r++) for(let c=0;c<this.piece.m[r].length;c++) if(this.piece.m[r][c])
-        ctx.fillRect(ox+(this.piece.x+c)*this.cell+1,oy+(this.piece.y+r)*this.cell+1,this.cell-2,this.cell-2);
+
+  private drawBlock(x:number,y:number,color:string,ghost=false): void {
+    const px=this.ox+x*this.cell, py=this.oy+y*this.cell; const ctx=this.ctx;
+    if(ghost){ ctx.strokeStyle=color; ctx.lineWidth=2; roundRect(ctx,px+2,py+2,this.cell-4,this.cell-4,4); ctx.stroke(); return; }
+    const g=ctx.createLinearGradient(px,py,px+this.cell,py+this.cell);
+    g.addColorStop(0,'#fff'); g.addColorStop(0.22,color); g.addColorStop(0.7,color); g.addColorStop(1,'#100818');
+    ctx.fillStyle=g; roundRect(ctx,px+1,py+1,this.cell-2,this.cell-2,4); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.35)'; roundRect(ctx,px+4,py+3,this.cell-10,5,2); ctx.fill();
+  }
+  private drawMini(shape:number[][], color:string, cx:number, cy:number): void {
+    const s=16; const pw=shape[0].length*s, ph=shape.length*s;
+    const sx=cx-pw/2, sy=cy-ph/2;
+    for(let y=0;y<shape.length;y++) for(let x=0;x<shape[y].length;x++) if(shape[y][x]){
+      const g=this.ctx.createLinearGradient(sx+x*s,sy+y*s,sx+x*s+s,sy+y*s+s);
+      g.addColorStop(0,'#fff'); g.addColorStop(0.3,color); g.addColorStop(1,'#1a0810');
+      this.ctx.fillStyle=g; roundRect(this.ctx,sx+x*s+1,sy+y*s+1,s-2,s-2,3); this.ctx.fill();
     }
-    ctx.fillStyle='#aaa'; ctx.font='12px monospace'; ctx.fillText('NEXT', ox+this.cols*this.cell+16, oy+16);
-    this.next.forEach((id,i)=>{
-      const m=SHAPES[id]; ctx.fillStyle=colors[id+1];
-      for(let r=0;r<m.length;r++) for(let c=0;c<m[r].length;c++) if(m[r][c]) ctx.fillRect(ox+this.cols*this.cell+20+c*12, oy+30+i*50+r*12,11,11);
-    });
-    ctx.fillText('HOLD', ox+this.cols*this.cell+16, oy+200);
-    if(this.hold!=null){ const m=SHAPES[this.hold]; ctx.fillStyle=colors[this.hold+1];
-      for(let r=0;r<m.length;r++) for(let c=0;c<m[r].length;c++) if(m[r][c]) ctx.fillRect(ox+this.cols*this.cell+20+c*12, oy+220+r*12,11,11); }
-    this.drawHud();
+  }
+
+  protected render(): void {
+    fillVoidBg(this.ctx,this.w,this.h); const ctx=this.ctx;
+    ctx.fillStyle='rgba(8,4,12,0.75)'; ctx.strokeStyle='rgba(255,32,64,0.45)';
+    roundRect(ctx,this.ox-140,this.oy,110,130,8); ctx.fill(); ctx.stroke();
+    roundRect(ctx,this.ox+this.cols*this.cell+24,this.oy,130,240,8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#9a8aa8'; ctx.font='600 11px Orbitron'; ctx.textAlign='center';
+    ctx.fillText('HOLD', this.ox-85, this.oy+22); ctx.fillText('NEXT', this.ox+this.cols*this.cell+89, this.oy+22);
+    if(this.hold) this.drawMini(SHAPES[this.hold.idx], COLORS[this.hold.idx], this.ox-85, this.oy+75);
+    this.next.slice(0,3).forEach((idx,i)=>this.drawMini(SHAPES[idx], COLORS[idx], this.ox+this.cols*this.cell+89, this.oy+70+i*70));
+
+    ctx.fillStyle='rgba(12,6,18,0.95)'; ctx.fillRect(this.ox-3,this.oy-3,this.cols*this.cell+6,this.rows*this.cell+6);
+    ctx.strokeStyle='rgba(0,232,255,0.4)'; ctx.lineWidth=2; ctx.strokeRect(this.ox-3,this.oy-3,this.cols*this.cell+6,this.rows*this.cell+6);
+    for(let y=0;y<this.rows;y++) for(let x=0;x<this.cols;x++) if(this.grid[y][x]) this.drawBlock(x,y,this.grid[y][x]!);
+
+    let gy=this.piece.y; while(!this.collides(this.piece.x,gy+1,this.piece.shape)) gy++;
+    for(let y=0;y<this.piece.shape.length;y++) for(let x=0;x<this.piece.shape[y].length;x++) if(this.piece.shape[y][x]) this.drawBlock(this.piece.x+x,gy+y,this.piece.color,true);
+    for(let y=0;y<this.piece.shape.length;y++) for(let x=0;x<this.piece.shape[y].length;x++) if(this.piece.shape[y][x]) this.drawBlock(this.piece.x+x,this.piece.y+y,this.piece.color);
+
+    if(this.flashT>0){ ctx.fillStyle=`rgba(255,255,255,${this.flashT})`; ctx.fillRect(this.ox,this.oy,this.cols*this.cell,this.rows*this.cell);
+      glowCircle(ctx,this.ox+this.cols*this.cell/2,this.oy+this.rows*this.cell/2,140,`rgba(0,232,255,${this.flashT})`); }
+
+    drawPremiumHud(ctx,this.w,{ title:'Chrono Drop', stats:[
+      {label:'SCORE',value:String(this.score),color:'#f0c14b'},
+      {label:'LINES',value:String(this.lines),color:'#00e8ff'},
+      {label:'LVL',value:String(this.level),color:'#ff2bd6'},
+    ]});
+    if(!this.started){ ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,this.w,this.h);
+      ctx.fillStyle='#fff'; ctx.font='800 26px Orbitron'; ctx.textAlign='center'; ctx.fillText('CHRONO DROP',this.w/2,this.h/2-10);
+      ctx.fillStyle='#9a8aa8'; ctx.font='600 14px Rajdhani'; ctx.fillText('↑ rotate · C hold · Space hard drop',this.w/2,this.h/2+18); }
   }
 }
 export const create: GameFactory=(c,h)=>new ChronoDrop(c,h);

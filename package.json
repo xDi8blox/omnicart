@@ -1,9 +1,9 @@
 {
   "name": "omnicart",
   "private": false,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "OMNICART — 30 neon arcade games in one cartridge",
+  "description": "OMNICART \u2014 10 demonic-neon arcade games in one cartridge",
   "scripts": {
     "dev": "vite --host --port 4500",
     "build": "tsc && vite build",

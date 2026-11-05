@@ -1,8 +1,8 @@
 # OMNICART
 
-**30 neon arcade games. One cartridge.**
+**10 demonic-neon arcade games. One cursed cartridge.**
 
-A polished browser game collection — Vite + TypeScript, Canvas 2D (Three.js for the hover-bike tunnel), lazy-loaded game chunks, procedural Web Audio, keyboard + touch, and a retro cartridge select menu with high scores.
+Vite + TypeScript · Canvas 2D + Three.js · lazy-loaded games · procedural Web Audio · keyboard + iPhone Safari landscape touch · localStorage highs.
 
 ## Play
 
@@ -10,44 +10,37 @@ A polished browser game collection — Vite + TypeScript, Canvas 2D (Three.js fo
 
 ![OMNICART menu](./screenshots/menu.png)
 
-## Screenshots
+## The Ten
+
+| | | |
+|---|---|---|
+| ![Hover Tube](./screenshots/hover-tube.png) **Hover Tube** — anti-gravity tunnel racer | ![Horizon Drive](./screenshots/horizon-drive.png) **Horizon Drive** — night highway | ![Void Wing](./screenshots/void-wing.png) **Void Wing** — bullet hell + bosses |
+| ![Prism Breaker](./screenshots/prism-breaker.png) **Prism Breaker** — glossy bricks | ![Neon Coil](./screenshots/neon-coil.png) **Neon Coil** — occult snake | ![Fluxball](./screenshots/fluxball.png) **Fluxball** — demonic pinball |
+| ![Chrono Drop](./screenshots/chrono-drop.png) **Chrono Drop** — SRS tetris | ![Gemfuse](./screenshots/gemfuse.png) **Gemfuse** — match-3 cascades | ![Lumen Chase](./screenshots/lumen-chase.png) **Lumen Chase** — maze chase |
+| ![Pulse Duel](./screenshots/pulse-duel.png) **Pulse Duel** — Quaternius 1v1 fighter | | |
+
+Mobile landscape:
 
 <p>
-  <img src="./screenshots/neon-coil.png" width="24%" alt="Neon Coil" />
-  <img src="./screenshots/void-wing.png" width="24%" alt="Void Wing" />
-  <img src="./screenshots/chrono-drop.png" width="24%" alt="Chrono Drop" />
-  <img src="./screenshots/hover-tube.png" width="24%" alt="Hover Tube" />
+  <img src="./screenshots/mobile-hover-tube.png" width="48%" alt="Hover Tube mobile" />
+  <img src="./screenshots/mobile-pulse-duel.png" width="48%" alt="Pulse Duel mobile" />
 </p>
-
-| Arcade | Puzzle | Racing | Action |
-|--------|--------|--------|--------|
-| ![Neon Coil](./screenshots/neon-coil.png) Neon Coil | ![Chrono Drop](./screenshots/chrono-drop.png) Chrono Drop | ![Driftwire](./screenshots/driftwire.png) Driftwire | ![Pulse Duel](./screenshots/pulse-duel.png) Pulse Duel |
-| ![Prism Breaker](./screenshots/prism-breaker.png) Prism Breaker | ![Gemfuse](./screenshots/gemfuse.png) Gemfuse | ![Horizon Drive](./screenshots/horizon-drive.png) Horizon Drive | ![Edge Parry](./screenshots/edge-parry.png) Edge Parry |
-| ![Void Wing](./screenshots/void-wing.png) Void Wing | ![Helix 2048](./screenshots/helix-2048.png) Helix 2048 | ![Lane Rush](./screenshots/lane-rush.png) Lane Rush | ![Street Surge](./screenshots/street-surge.png) Street Surge |
-| ![Shard Field](./screenshots/shard-field.png) Shard Field | ![Signal Sweep](./screenshots/signal-sweep.png) Signal Sweep | ![Hover Tube](./screenshots/hover-tube.png) Hover Tube | ![Ring Push](./screenshots/ring-push.png) Ring Push |
-| ![Lumen Chase](./screenshots/lumen-chase.png) Lumen Chase | ![Glyph Grid](./screenshots/glyph-grid.png) Glyph Grid | ![Arena Kart](./screenshots/arena-kart.png) Arena Kart | ![Apex Gauntlet](./screenshots/apex-gauntlet.png) Apex Gauntlet |
-| ![Rushline](./screenshots/rushline.png) Rushline | ![Shift-15](./screenshots/shift-15.png) Shift-15 | | |
-| ![Cave Dart](./screenshots/cave-dart.png) Cave Dart | ![Conduit](./screenshots/conduit.png) Conduit | | |
-| ![Fluxball](./screenshots/fluxball.png) Fluxball | ![Echo Pairs](./screenshots/echo-pairs.png) Echo Pairs | | |
-| ![Aegis Grid](./screenshots/aegis-grid.png) Aegis Grid | ![Lexigrid](./screenshots/lexigrid.png) Lexigrid | | |
-| ![Sky Stack](./screenshots/sky-stack.png) Sky Stack | ![Cratecraft](./screenshots/cratecraft.png) Cratecraft | | |
-
-All captures are in [`screenshots/`](./screenshots/).
 
 ## Controls
 
-- **Keyboard:** Arrows / WASD move · Space / Z / J action · Esc / P pause · extras per game (hold, flippers, dash, etc.)
-- **Touch:** On-screen D-pad + A/B · swipe/tap where it fits
-- **Mobile:** Landscape-friendly responsive canvas with `devicePixelRatio` scaling
+- **Keyboard:** Arrows / WASD · Space / J / K actions · Esc / P pause · C hold (Chrono) · Z/M flippers
+- **Touch:** On-screen D-pad + A/B · swipe where it fits · landscape recommended
+- **Fighter:** ←/→ move · ↑ jump · J punch · K kick · Shift block
 
 ## Tech
 
 - Vite + TypeScript
-- Shared `GameBase` shell: HUD, pause/restart/quit, settings (SFX/music/mute), localStorage highs & stats
-- Three.js only for **Hover Tube**
-- Each game is its own lazy chunk
+- Shared `GameBase` / HUD / pause / restart / game-over / settings
+- Three.js only for Hover Tube, Horizon Drive, Pulse Duel (bloom scaled down on mobile)
+- Quaternius CC0 fighters (from BLOODRITE)
+- Each game is a lazy chunk
 - Procedural Web Audio SFX + motif music
-- Playwright smoke: launches all 30 with keyboard + touch, asserts canvas render & no errors
+- Playwright smoke: every game boots, 5s simulated input, no console errors
 
 ## Develop
 
