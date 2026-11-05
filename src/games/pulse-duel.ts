@@ -3,47 +3,78 @@ import type { GameHooks, GameFactory } from '../core/types';
 import { input } from '../input/Input';
 import { audio } from '../audio/AudioEngine';
 
+type Fighter={x:number;y:number;hp:number;max:number;face:number;cool:number;atk:number;stun:number;combo:number;vy:number;ground:boolean};
 class PulseDuel extends GameBase {
-  private p={x:0,y:0,hp:5,face:1,cool:0,atk:0};
-  private e={x:0,y:0,hp:5,face:-1,cool:0,atk:0,ai:0};
-  private round=1;
+  private p!:Fighter; private e!:Fighter; private round=1; private wins=0; private ewins=0; private flash=0;
   constructor(c:HTMLCanvasElement,h:GameHooks){super(c,h,'#ef476f');}
   protected onStart(){
-    this.p={x:this.w*0.3,y:this.h*0.65,hp:5,face:1,cool:0,atk:0};
-    this.e={x:this.w*0.7,y:this.h*0.65,hp:5,face:-1,cool:0,atk:0,ai:0};
-    this.round=1;
+    this.round=1; this.wins=0; this.ewins=0; this.resetRound();
+  }
+  private resetRound(){
+    this.p={x:this.w*0.28,y:this.h*0.65,hp:100,max:100,face:1,cool:0,atk:0,stun:0,combo:0,vy:0,ground:true};
+    this.e={x:this.w*0.72,y:this.h*0.65,hp:100,max:100,face:-1,cool:0,atk:0,stun:0,combo:0,vy:0,ground:true};
+    this.flash=0;
   }
   protected update(dt:number){
-    this.p.cool-=dt; this.e.cool-=dt; this.p.atk=Math.max(0,this.p.atk-dt); this.e.atk=Math.max(0,this.e.atk-dt);
-    const a=input.axis(); this.p.x+=a.x*200*dt; this.p.x=Math.max(40,Math.min(this.w-40,this.p.x));
-    if(this.p.x<this.e.x) this.p.face=1; else this.p.face=-1;
-    if(input.just('j')||input.just('z')||input.actionJust()) this.strike(this.p,this.e,18,1);
-    if(input.just('k')||input.just('x')) this.strike(this.p,this.e,28,1.4);
-    if(input.just('l')||input.just('c')) this.strike(this.p,this.e,40,2);
-    // AI
-    this.e.ai-=dt;
-    const dist=this.e.x-this.p.x;
-    if(Math.abs(dist)>90) this.e.x += Math.sign(this.p.x-this.e.x)*140*dt;
-    else if(this.e.ai<=0){ this.strike(this.e,this.p,20+Math.random()*15,1.2); this.e.ai=0.5+Math.random()*0.6; }
-    this.e.face=this.e.x<this.p.x?1:-1;
-    if(this.e.hp<=0){ this.addScore(200); this.round++; audio.win(); if(this.round>3) this.gameOver(true); else { this.e.hp=5; this.p.hp=Math.min(5,this.p.hp+1); this.e.x=this.w*0.7; this.p.x=this.w*0.3; } }
-    if(this.p.hp<=0) this.gameOver(false);
+    this.flash=Math.max(0,this.flash-dt);
+    this.tick(this.p,dt); this.tick(this.e,dt);
+    if(this.p.stun<=0){
+      const a=input.axis(); this.p.x+=a.x*240*dt;
+      if(a.x) this.p.face=Math.sign(a.x)||this.p.face;
+      if(input.just('j')||input.just('z')||input.actionJust()) this.strike(this.p,this.e,42,8,'punch');
+      if(input.just('k')||input.just('x')) this.strike(this.p,this.e,50,14,'kick');
+      if(input.just('l')||input.just('c')) this.strike(this.p,this.e,70,22,'special');
+    }
+    // smarter CPU
+    if(this.e.stun<=0){
+      const dist=this.e.x-this.p.x;
+      this.e.face=dist>0?-1:1;
+      if(Math.abs(dist)>100) this.e.x += Math.sign(this.p.x-this.e.x)*160*dt;
+      else if(Math.abs(dist)<40) this.e.x += Math.sign(this.e.x-this.p.x)*120*dt; // spacing
+      this.e.cool-=dt;
+      if(this.e.cool<=0 && Math.abs(dist)<90){
+        const r=Math.random();
+        if(r<0.45) this.strike(this.e,this.p,42,8,'punch');
+        else if(r<0.8) this.strike(this.e,this.p,50,12,'kick');
+        else this.strike(this.e,this.p,65,18,'special');
+        this.e.cool=0.45+Math.random()*0.4;
+      }
+    }
+    this.p.x=Math.max(40,Math.min(this.w-40,this.p.x));
+    this.e.x=Math.max(40,Math.min(this.w-40,this.e.x));
+    if(this.e.hp<=0){ this.wins++; this.addScore(200); this.burst(this.e.x,this.e.y,'#4cc9f0',24); audio.win();
+      if(this.wins>=2) this.gameOver(true); else { this.round++; this.resetRound(); } }
+    if(this.p.hp<=0){ this.ewins++; this.bump(0.4);
+      if(this.ewins>=2) this.gameOver(false); else { this.round++; this.resetRound(); } }
   }
-  private strike(att:{x:number;y:number;hp:number;face:number;cool:number;atk:number}, def:{x:number;y:number;hp:number;face:number;cool:number;atk:number}, range:number, dmg:number){
-    if(att.cool>0) return; att.cool=0.35; att.atk=0.2; audio.blip(400);
-    if(Math.abs(att.x-def.x)<range+30){ def.hp-=dmg; def.x+=att.face*20; this.addScore(10); audio.hit(); }
+  private tick(f:Fighter,dt:number){ f.cool=Math.max(0,f.cool-dt); f.atk=Math.max(0,f.atk-dt); f.stun=Math.max(0,f.stun-dt); if(f.atk<=0) f.combo=Math.max(0,f.combo-dt*2); }
+  private strike(att:Fighter, def:Fighter, range:number, dmg:number, kind:string){
+    if(att.cool>0||att.stun>0) return;
+    att.cool=kind==='special'?0.55:0.28; att.atk=0.18; audio.blip(kind==='special'?280:450);
+    if(Math.abs(att.x-def.x)<range && Math.abs(att.y-def.y)<40){
+      const scale=1+att.combo*0.15; def.hp-=dmg*scale; def.stun=0.15; def.x+=att.face*(18+dmg*0.4);
+      att.combo+=1; this.addScore(Math.floor(10*scale)); audio.hit(); this.bump(0.12); this.flash=0.08;
+      this.burst((att.x+def.x)/2, att.y-20, '#ffe66b', 10);
+    }
   }
   protected render(){
-    this.clear('#140810');
+    this.clear(this.flash>0?'#2a1020':'#140810');
     const ctx=this.ctx;
     ctx.fillStyle='#222'; ctx.fillRect(0,this.h*0.72,this.w,this.h);
-    const draw=(f:typeof this.p, color:string)=>{
-      ctx.fillStyle=color; ctx.fillRect(f.x-16,f.y-50,32,50);
-      if(f.atk>0){ ctx.fillStyle='#ffe66b'; ctx.fillRect(f.x+f.face*16,f.y-35,24,8); }
-      ctx.fillStyle='#fff'; for(let i=0;i<f.hp;i++) ctx.fillRect(f.x-20+i*10,f.y-60,8,6);
+    // health bars
+    const bar=(x:number,f:Fighter,color:string)=>{
+      ctx.fillStyle='#300'; ctx.fillRect(x,16,this.w*0.35,12);
+      ctx.fillStyle=color; ctx.fillRect(x,16,this.w*0.35*(f.hp/f.max),12);
+      ctx.strokeStyle='#fff'; ctx.strokeRect(x,16,this.w*0.35,12);
+    };
+    bar(12,this.p,'#ef476f'); bar(this.w-12-this.w*0.35,this.e,'#4cc9f0');
+    const draw=(f:Fighter,color:string)=>{
+      ctx.fillStyle=f.stun>0?'#fff':color; ctx.fillRect(f.x-16,f.y-52,32,52);
+      if(f.atk>0){ ctx.fillStyle='#ffe66b'; ctx.fillRect(f.x+f.face*16,f.y-36,22+f.combo*2,8); }
+      if(f.combo>=2){ ctx.fillStyle='#fff'; ctx.font='12px monospace'; ctx.fillText(`x${Math.floor(f.combo)}`, f.x-8, f.y-58); }
     };
     draw(this.p,'#ef476f'); draw(this.e,'#4cc9f0');
-    this.drawHud(`ROUND ${this.round}`);
+    this.drawHud(`R${this.round}  YOU ${this.wins} · CPU ${this.ewins}`);
   }
 }
 export const create: GameFactory=(c,h)=>new PulseDuel(c,h);

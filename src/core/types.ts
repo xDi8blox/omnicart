@@ -1,5 +1,15 @@
 export type GameCategory = 'arcade' | 'puzzle' | 'racing' | 'action';
 
+export type TouchLayout =
+  | 'dpad-ab'
+  | 'dpad-only'
+  | 'tap'
+  | 'flippers'
+  | 'aim'
+  | 'lanes'
+  | 'fighter'
+  | 'none';
+
 export interface GameMeta {
   id: string;
   name: string;
@@ -8,6 +18,8 @@ export interface GameMeta {
   accent: string;
   controls: string;
   description: string;
+  howto: string;
+  touch: TouchLayout;
 }
 
 export interface GameHooks {
