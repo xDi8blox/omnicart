@@ -69,9 +69,15 @@ class PulseDuel extends GameBase {
     };
     bar(12,this.p,'#ef476f'); bar(this.w-12-this.w*0.35,this.e,'#4cc9f0');
     const draw=(f:Fighter,color:string)=>{
-      ctx.fillStyle=f.stun>0?'#fff':color; ctx.fillRect(f.x-16,f.y-52,32,52);
-      if(f.atk>0){ ctx.fillStyle='#ffe66b'; ctx.fillRect(f.x+f.face*16,f.y-36,22+f.combo*2,8); }
-      if(f.combo>=2){ ctx.fillStyle='#fff'; ctx.font='12px monospace'; ctx.fillText(`x${Math.floor(f.combo)}`, f.x-8, f.y-58); }
+      ctx.fillStyle=f.stun>0?'#fff':color;
+      // body
+      ctx.fillRect(f.x-14,f.y-40,28,36);
+      // head
+      ctx.beginPath(); ctx.arc(f.x,f.y-48,10,0,7); ctx.fill();
+      // legs
+      ctx.fillRect(f.x-12,f.y-6,10,14); ctx.fillRect(f.x+2,f.y-6,10,14);
+      if(f.atk>0){ ctx.fillStyle='#ffe66b'; ctx.fillRect(f.x+f.face*12,f.y-34,26+f.combo*2,8); }
+      if(f.combo>=2){ ctx.fillStyle='#fff'; ctx.font='12px monospace'; ctx.textAlign='center'; ctx.fillText(`x${Math.floor(f.combo)}`, f.x, f.y-64); }
     };
     draw(this.p,'#ef476f'); draw(this.e,'#4cc9f0');
     this.drawHud(`R${this.round}  YOU ${this.wins} · CPU ${this.ewins}`);

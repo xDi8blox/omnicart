@@ -19,7 +19,8 @@ test.beforeAll(() => {
 test('capture menu', async ({ page }) => {
   await page.goto('/');
   await page.waitForSelector('.cart');
-  await page.waitForTimeout(800);
+  await page.waitForSelector('.hero');
+  await page.waitForTimeout(1000);
   await page.screenshot({ path: path.join(OUT, 'menu.png'), fullPage: true });
   expect(fs.existsSync(path.join(OUT, 'menu.png'))).toBeTruthy();
 });
@@ -32,10 +33,18 @@ for (const id of GAMES) {
       await (window as unknown as { __OMNICART__: { launch: (id: string) => Promise<void> } }).__OMNICART__.launch(gid);
     }, id);
     await page.waitForSelector('#play.active');
-    await page.waitForTimeout(300);
+    await page.waitForSelector('#loading-game[hidden]', { state: 'attached', timeout: 15000 }).catch(() => {});
+    await page.evaluate(() => {
+      const el = document.getElementById('loading-game');
+      if (el) el.hidden = true;
+      const pad = document.getElementById('touch-pad');
+      if (pad) pad.style.display = 'none';
+    });
+    await page.waitForTimeout(500);
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Space');
-    await page.waitForTimeout(900);
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(1100);
     await page.screenshot({ path: path.join(OUT, `${id}.png`) });
     expect(fs.existsSync(path.join(OUT, `${id}.png`))).toBeTruthy();
   });
