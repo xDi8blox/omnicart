@@ -17,7 +17,7 @@ test('menu boots', async ({ page }) => {
   await page.goto('/');
   await page.waitForSelector('.cart');
   await expect(page.locator('.cart')).toHaveCount(10);
-  expect(errors.filter(e => !e.includes('favicon') && !e.includes('Failed to load resource')).toHaveLength(0);
+  expect(errors.filter(e => !e.includes('favicon') && !e.includes('Failed to load resource'))).toHaveLength(0);
 });
 
 for (const id of GAMES) {

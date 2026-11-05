@@ -12,10 +12,9 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     hasTouch: true,
     ...devices['Desktop Chrome'],
-    headless: true,
-    viewport: { width: 1280, height: 720 },
-    hasTouch: true,
-    baseURL: 'http://127.0.0.1:4500',
+    launchOptions: {
+      args: ['--use-gl=swiftshader', '--ignore-gpu-blocklist'],
+    },
   },
   webServer: {
     command: 'npm run preview -- --host 127.0.0.1 --port 4500',

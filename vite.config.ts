@@ -9,6 +9,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/three')) return 'three';
+          if (id.includes('/src/shared/threeKit')) return 'three-kit';
           if (id.includes('/src/games/')) {
             const m = id.match(/\/games\/([^/]+)/);
             if (m) return `game-${m[1]}`;

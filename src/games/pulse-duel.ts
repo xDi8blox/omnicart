@@ -28,7 +28,7 @@ class PulseDuelGame implements GameInstance {
 
   private layout(): void {
     const parent=this.canvas.parentElement??document.body;
-    const {w,h}=fitParent(this.canvas,parent,16/9); this.w=w; this.h=h;
+    const {w,h}=fitParent(this.canvas, parent, 16/9, { setup2d: false, dprCap: 1.75 }); this.w=w; this.h=h;
     this.canvas.dataset.cssW=String(w); this.canvas.dataset.cssH=String(h);
     if(this.kit) resizeThree(this.kit,w,h);
   }

@@ -95,7 +95,7 @@ const bootFill = document.getElementById('boot-fill') as HTMLElement;
 const shell = document.getElementById('shell')!;
 const menu = document.getElementById('menu')!;
 const play = document.getElementById('play')!;
-const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+let canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const playTitle = document.getElementById('play-title')!;
 const loadingGame = document.getElementById('loading-game')!;
 const pauseOverlay = document.getElementById('pause-overlay')!;
@@ -261,6 +261,11 @@ async function launch(id: string): Promise<void> {
     current.destroy();
     current = null;
   }
+  // Fresh canvas each launch so 2D and WebGL games can alternate
+  const fresh = document.createElement('canvas');
+  fresh.id = 'game-canvas';
+  canvas.replaceWith(fresh);
+  canvas = fresh;
   try {
     const mod = await loaders[id]();
     loadingGame.hidden = true;

@@ -110,7 +110,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
   background: linear-gradient(90deg, var(--neon), var(--pink), var(--gold));
 }
 .hero-logo::after {
-  content: "30"; position: absolute; left: 10px; bottom: 14px; font-weight: 900; font-size: 1.4rem;
+  content: "10"; position: absolute; left: 10px; bottom: 14px; font-weight: 900; font-size: 1.4rem;
   color: var(--neon); letter-spacing: 0.05em;
 }
 .hero-copy h1 {
